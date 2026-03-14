@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Host Mini-Jeux Mario Party</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="top-info">
+      <p>Bienvenue sur le host de mini-jeux.</p>
+    </header>
+
+    <section class="panel collapsible" data-open="true">
+      <div class="panel-header">
+        <h2>Joueurs</h2>
+        <button class="toggle-btn">⬆️</button>
+      </div>
+      <div class="panel-content">
+        <p>Ajoute, modifie, supprime (max 6 joueurs) et attribue une couleur.</p>
+        <div class="player-form">
+          <input type="text" id="player-name" placeholder="Entrez un pseudo" maxlength="20" />
+          <input type="color" id="player-color" value="#ff0000" />
+          <button id="add-player">Ajouter joueur</button>
+        </div>
+        <div id="players-list" class="players-list"></div>
+      </div>
+    </section>
+
+    <section class="panel collapsible" data-open="true">
+      <div class="panel-header">
+        <h2>Mini-jeu</h2>
+        <button class="toggle-btn">⬆️</button>
+      </div>
+      <div class="panel-content">
+        <div id="games-list" class="games-grid">
+          <button class="game-button" id="random-game">
+            <img src="aleatoire.png" alt="Aléatoire" class="game-icon" />
+            <span>Aléatoire</span>
+          </button>
+          <button class="game-button" id="list-game">
+            <img src="liste.png" alt="Liste" class="game-icon" />
+            <span>Liste</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel collapsible" data-open="false">
+      <div class="panel-header">
+        <h2>Options</h2>
+        <button class="toggle-btn">⬆️</button>
+      </div>
+      <div class="panel-content">
+        <label style="display:flex;align-items:center;justify-content:center;gap:8px;">
+          <input type="checkbox" id="mario-pourty-toggle" />
+          <span>Mario Pourty</span>
+        </label>
+      </div>
+    </section>
+  </div>
+
+  <div id="list-overlay" class="overlay hidden">
+    <div class="overlay-inner">
+      <div class="overlay-header">
+        <h2>Sélection de jeu - Liste</h2>
+        <button class="close-overlay">Retour</button>
+      </div>
+      <div id="games-card-grid" class="games-card-grid"></div>
+    </div>
+  </div>
+
+  <div id="random-overlay" class="overlay hidden">
+    <div class="overlay-inner">
+      <canvas id="particle-canvas"></canvas>
+      <div class="overlay-header">
+        <h2>Sélection de jeu - Roue aléatoire</h2>
+        <button class="close-overlay">Retour</button>
+      </div>
+      <div id="random-content" class="random-content">
+        <div class="wheel-wrapper">
+          <canvas id="wheel-canvas" width="520" height="520"></canvas>
+          <div class="wheel-pointer">▼</div>
+        </div>
+        <button id="spin-wheel" class="spin-wheel">Lancer la roue</button>
+        <div id="random-result" class="random-result"></div>
+      </div>
+      <div id="winner-overlay" class="winner-overlay hidden">
+        <div class="winner-content">
+          <h1 id="winner-title"></h1>
+          <p id="winner-desc"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="games.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
