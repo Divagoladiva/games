@@ -368,8 +368,8 @@
     roundInfoEl.textContent = '';
 
     const eliminated = players.filter(p => p.eliminated).sort((a,b) => {
-      if (a.eliminationRound !== b.eliminationRound) return a.eliminationRound - b.eliminationRound;
-      return a.eliminationOrder - b.eliminationOrder;
+      if (a.eliminationRound !== b.eliminationRound) return b.eliminationRound - a.eliminationRound;
+      return b.eliminationOrder - a.eliminationOrder;
     });
     const survivors = players.filter(p => !p.eliminated).sort((a,b) => b.score - a.score);
     const ranking = [...survivors, ...eliminated];
