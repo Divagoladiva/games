@@ -5,6 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Host Mini-Jeux Mario Party</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Reroll button styling (fixed, visible, high z-index). */
+    #reroll-btn {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999999;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #ff5f72 0%, #ff8c42 100%);
+      color: #fff;
+      font-weight: 600;
+      font-size: 16px;
+      border: none;
+      border-radius: 999px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      cursor: pointer;
+      transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+    }
+
+    #reroll-btn:hover { transform: translateX(-50%) translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.28); }
+    #reroll-btn:active { transform: translateX(-50%) translateY(0); }
+
+    /* Keep the hidden class behavior predictable for this button */
+    #reroll-btn.hidden { display: none !important; opacity: 0; pointer-events: none; }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -96,6 +127,7 @@
   </div>
 
   <script src="games.js"></script>
+  <button id="reroll-btn" class="reroll-btn hidden" style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:99999;">J'en veux un autre</button>
   <script src="script.js"></script>
 </body>
 </html>
