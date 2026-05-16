@@ -134,6 +134,65 @@ const spinWheelBtn = document.getElementById('spin-wheel');
 const wheelCanvas = document.getElementById('wheel-canvas');
 let isSpinning = false;
 let currentAnimation = null;
+let originalGames = (typeof games !== 'undefined') ? games.slice() : [];
+let availableGames = [];
+let winnerTimeout = null;
+let rerollBtn = null;
+
+function resetRandomState() {
+  if (winnerTimeout) { clearTimeout(winnerTimeout); winnerTimeout = null; }
+  if (currentAnimation) { cancelAnimationFrame(currentAnimation); currentAnimation = null; }
+  isSpinning = false;
+  availableGames = originalGames.slice();
+  if (randomResult) randomResult.textContent = '';
+  if (rerollBtn) rerollBtn.classList.add('hidden');
+}
+
+function createRerollButton() {
+  if (rerollBtn) return rerollBtn;
+  const existing = document.getElementById('reroll-btn');
+  const randomContent = document.getElementById('random-content');
+  if (existing) {
+    rerollBtn = existing;
+    if (!rerollBtn._copilotBound) {
+      rerollBtn.addEventListener('click', () => {
+        if (isSpinning) return;
+        if (winnerTimeout) { clearTimeout(winnerTimeout); winnerTimeout = null; }
+        const winner = document.getElementById('winner-overlay');
+        const randomContentEl = document.getElementById('random-content');
+        if (winner) winner.classList.add('hidden');
+        if (randomContentEl) randomContentEl.style.visibility = 'visible';
+        spinWheel(3);
+      });
+      rerollBtn._copilotBound = true;
+    }
+    return rerollBtn;
+  }
+  if (!randomContent) return null;
+  rerollBtn = document.createElement('button');
+  rerollBtn.id = 'reroll-btn';
+  rerollBtn.className = 'reroll-btn hidden';
+  rerollBtn.textContent = "J'en veux un autre";
+  rerollBtn.addEventListener('click', () => {
+    if (isSpinning) return;
+    if (winnerTimeout) { clearTimeout(winnerTimeout); winnerTimeout = null; }
+    const winner = document.getElementById('winner-overlay');
+    const randomContentEl = document.getElementById('random-content');
+    if (winner) winner.classList.add('hidden');
+    if (randomContentEl) randomContentEl.style.visibility = 'visible';
+    spinWheel(3);
+  });
+  randomContent.appendChild(rerollBtn);
+  rerollBtn._copilotBound = true;
+  return rerollBtn;
+}
+
+function updateRerollVisibility() {
+  createRerollButton();
+  if (!rerollBtn) return;
+  if (availableGames.length > 0) rerollBtn.classList.remove('hidden');
+  else rerollBtn.classList.add('hidden');
+}
 
 function showOverlay(overlay) {
   mainContainer.classList.add('hidden');
@@ -146,14 +205,13 @@ function closeOverlay() {
   mainContainer.classList.remove('hidden');
   listOverlay.classList.add('hidden');
   randomOverlay.classList.add('hidden');
-  randomResult.textContent = '';
-  isSpinning = false;
+  // reset wheel state when closing overlay
+  resetRandomState();
 
   const winner = document.getElementById('winner-overlay');
   const randomContent = document.getElementById('random-content');
   if (winner) winner.classList.add('hidden');
   if (randomContent) randomContent.style.visibility = 'visible';
-  if (currentAnimation) cancelAnimationFrame(currentAnimation);
 }
 
 const gameColors = ['#ff5f72','#6a82fb','#48c6ef','#7bffb1','#ffbd55','#e96dff','#ff8c42','#6b6b6b','#2e1197', '#f8fa6f'];
@@ -168,6 +226,10 @@ function showRandomOverlay() {
   mainContainer.classList.add('hidden');
   listOverlay.classList.add('hidden');
   randomOverlay.classList.remove('hidden');
+  // initialize available games and hide reroll button
+  originalGames = (typeof games !== 'undefined') ? games.slice() : [];
+  availableGames = originalGames.slice();
+  if (rerollBtn) rerollBtn.classList.add('hidden');
 }
 
 function renderGameCards() {
@@ -199,15 +261,16 @@ function renderGameCards() {
   });
 }
 
-function drawWheel(angle) {
+function drawWheel(angle, gameList = games) {
   const ctx = wheelCanvas.getContext('2d');
   const radius = wheelCanvas.width / 2 - 10;
   const center = wheelCanvas.width / 2;
   ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
 
-  const sliceAngle = (Math.PI * 2) / games.length;
+  if (!gameList || gameList.length === 0) gameList = games;
+  const sliceAngle = (Math.PI * 2) / gameList.length;
 
-  games.forEach((game, index) => {
+  gameList.forEach((game, index) => {
     const startA = angle + index * sliceAngle;
     const endA = startA + sliceAngle;
     ctx.beginPath();
@@ -237,7 +300,8 @@ function drawWheel(angle) {
 }
 
 function renderRandomWheel() {
-  drawWheel(0);
+  if (!availableGames || availableGames.length === 0) availableGames = (typeof games !== 'undefined' ? games.slice() : []);
+  drawWheel(0, availableGames);
 }
 
 function startParticleBurst() {
@@ -302,23 +366,29 @@ function showWinnerOverlay(game) {
   if (randomContent) randomContent.style.visibility = 'hidden';
   winner.classList.remove('hidden');
 
-  setTimeout(() => {
+  if (winnerTimeout) clearTimeout(winnerTimeout);
+  winnerTimeout = setTimeout(() => {
     window.location.href = game.file;
   }, 5000);
+
+  // show reroll button if there are still games left
+  updateRerollVisibility();
 }
 
-function spinWheel() {
+function spinWheel(speedMultiplier = 1) {
   if (isSpinning) return;
   isSpinning = true;
   randomResult.textContent = 'Tourne...';
   startParticleBurst();
 
-  const targetIndex = Math.floor(Math.random() * games.length);
-  const sliceAngle = (Math.PI * 2) / games.length;
+  if (!availableGames || availableGames.length === 0) availableGames = (typeof games !== 'undefined' ? games.slice() : []);
+
+  const targetIndex = Math.floor(Math.random() * availableGames.length);
+  const sliceAngle = (Math.PI * 2) / availableGames.length;
   const fullSpins = 6;
   const targetAngle = fullSpins * 2 * Math.PI + (Math.PI * 1.5) - (targetIndex + 0.5) * sliceAngle;
 
-  const duration = 6000;
+  const duration = Math.max(200, Math.floor(6000 / speedMultiplier));
   const start = performance.now();
   const initAngle = 0;
 
@@ -331,13 +401,15 @@ function spinWheel() {
     const progress = Math.min(elapsed / duration, 1);
     const eased = easeOut(progress);
     const currentAngle = initAngle + (targetAngle - initAngle) * eased;
-    drawWheel(currentAngle);
+    drawWheel(currentAngle, availableGames);
 
     if (progress < 1) {
       currentAnimation = requestAnimationFrame(frame);
     } else {
       isSpinning = false;
-      const selected = games[targetIndex];
+      const selected = availableGames[targetIndex];
+      // remove the selected from availableGames so future rerolls won't include it
+      availableGames.splice(targetIndex, 1);
       randomResult.textContent = `Jeu choisi : ${selected.title}`;
       showWinnerOverlay(selected);
     }
@@ -354,15 +426,16 @@ function initGameControls() {
   });
 
   document.getElementById('random-game').addEventListener('click', () => {
+    showRandomOverlay();
     renderRandomWheel();
-    showOverlay(randomOverlay);
+    createRerollButton();
   });
 
   document.querySelectorAll('.close-overlay').forEach(btn => {
     btn.addEventListener('click', closeOverlay);
   });
 
-  spinWheelBtn.addEventListener('click', spinWheel);
+  spinWheelBtn.addEventListener('click', () => spinWheel(1));
 }
 
 function initCollapsibles() {
@@ -382,4 +455,13 @@ window.addEventListener('load', () => {
   initCollapsibles();
   initGameControls();
   loadMarioPourtyToggle();
+});
+
+// Reset random state if user navigates away or page is hidden
+window.addEventListener('pagehide', () => {
+  resetRandomState();
+  if (rerollBtn) rerollBtn.classList.add('hidden');
+});
+window.addEventListener('beforeunload', () => {
+  resetRandomState();
 });
