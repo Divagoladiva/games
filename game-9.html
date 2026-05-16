@@ -29,6 +29,8 @@
     .bet-controls{display:flex;align-items:center;gap:8px}
     .big-btn{padding:10px 14px;border-radius:8px;border:none;background:#6bc0ff;color:#071a3a;font-weight:900;cursor:pointer}
     .big-btn.secondary{background:#ff9d5a}
+    /* prayer toggle button (green) */
+    #prayerToggle{background:linear-gradient(90deg,#4caf50,#2e7d32);color:#fff;border:none}
     #message{min-height:28px;margin-top:6px;color:#dbe9ff;font-size:1.25rem;font-weight:900}
     .meta{font-weight:800}
 
@@ -58,6 +60,19 @@
 
     .hidden{display:none}
     .return-btn{margin-top:12px;padding:10px 14px;border-radius:10px;background:#ff776d;color:#fff;border:none;font-weight:700;cursor:pointer}
+    /* Prayer panel styles */
+    .prayer-panel{display:flex;align-items:center;justify-content:center;gap:18px;background:linear-gradient(180deg,#091225,#0b1730);padding:28px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);min-height:360px;flex:0 0 auto}
+    .prayer-box{display:flex;gap:18px;align-items:center}
+    .prayer-wheel{width:160px;height:160px;border-radius:12px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;transform:rotate(-90deg);background:conic-gradient(#4caf50 0 1%, #ff4c4c 1% 100%);box-shadow:inset 0 2px 8px rgba(0,0,0,0.6)}
+    .prayer-wheel .inner{width:96px;height:96px;border-radius:50%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;transform:rotate(90deg);}
+    .prayer-spinner{position:absolute;left:0;top:0;right:0;bottom:0;transform-origin:center center;}
+    .prayer-pointer{position:absolute;left:50%;top:8px;width:8px;height:8px;background:#fff;border-radius:50%;transform:translateX(-50%);box-shadow:0 4px 12px rgba(0,0,0,0.6);pointer-events:none}
+    .prayer-ping{position:absolute;left:50%;top:8px;width:12px;height:12px;border-radius:50%;transform:translateX(-50%);background:#fff;box-shadow:0 6px 18px rgba(255,255,255,0.9);opacity:0;transition:opacity .18s ease, transform .18s ease}
+    .prayer-ping.show{opacity:1;transform:translateX(-50%) scale(1.15)}
+    .prayer-controls{display:flex;flex-direction:column;align-items:flex-start;gap:8px;color:#dbe9ff}
+    .prayer-controls label{font-weight:800}
+    input[type=range].prayer-range{width:220px}
+    #chancePopup{position:fixed;top:12px;right:12px;padding:8px 12px;background:linear-gradient(90deg,#ffd54d,#ffb74d);color:#071224;font-weight:900;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.35);z-index:100020}
   </style>
 </head>
 <body>
@@ -83,6 +98,25 @@
           <div class="center-line" aria-hidden="true"></div>
         </div>
 
+        <!-- Prayer panel inserted here so it occupies the same place as the slot-machine -->
+        <div id="prayer-panel" class="prayer-panel hidden" aria-hidden="true">
+          <div class="prayer-box">
+            <div id="prayerWheel" class="prayer-wheel" aria-hidden="true">
+              <div class="inner"></div>
+              <div id="prayerSpinner" class="prayer-spinner"><div id="prayerPointer" class="prayer-pointer"></div></div>
+              <div id="prayerPing" class="prayer-ping"></div>
+            </div>
+            <div class="prayer-controls">
+              <label>Montant: <span id="prayerAmountLabel">1$</span></label>
+              <input id="prayerAmount" class="prayer-range" type="range" min="1" max="75" value="1" />
+              <div style="margin-top:6px">
+                <button id="prayBtn" class="big-btn">Prier</button>
+              </div>
+              <div style="font-size:0.9rem;color:rgba(255,255,255,0.6);max-width:260px">Si le ping finit dans la zone verte, tu gagnes <strong>Chance x2</strong> pour ce tour. Sinon, tu perds la mise.</div>
+            </div>
+          </div>
+        </div>
+
         <div class="controls-right">
           <div id="lever" class="lever" title="Tirer la manivelle">🎰</div>
         </div>
@@ -91,7 +125,7 @@
       <div class="info-bar">
         <div class="small-pill">Argent: <span id="money">50$</span></div>
         <div class="small-pill">Spins restants: <span id="spins">5</span></div>
-        <div class="small-pill bet-controls">Mise: <button id="betMinus" class="big-btn">-</button> <span id="bet" class="meta">1$</span> <button id="betPlus" class="big-btn">+</button> <button id="stopBtn" class="big-btn secondary" style="margin-left:8px">Arrêter</button></div>
+        <div class="small-pill bet-controls">Mise: <button id="betMinus" class="big-btn">-</button> <span id="bet" class="meta">1$</span> <button id="betPlus" class="big-btn">+</button> <button id="stopBtn" class="big-btn secondary" style="margin-left:8px">Arrêter</button> <button id="prayerToggle" class="big-btn" style="margin-left:8px">Prière</button></div>
       </div>
 
       <div id="message"></div>
@@ -99,12 +133,15 @@
       <div style="width:100%;max-width:920px;margin-top:8px">
         <script src="game-players.js"></script>
       </div>
+      
+      
     </div>
 
     <div id="flashOverlay" class="flash-overlay hidden"></div>
     <div id="moneyBurst" class="money-burst"></div>
     <div id="jackpotOverlay" class="hidden"><div class="text">JACKPOT!</div></div>
     <div id="poorOverlay" class="hidden"><div class="text">T'ES PAUVRE</div></div>
+    <div id="chancePopup" class="hidden">Chance x2</div>
   </main>
 
   <script>
@@ -159,6 +196,8 @@
     function startTurn(idx){
       currentIdx = idx;
       // wrap-around rounds until all spins exhausted
+      // ensure prayer UI is hidden when a new turn starts
+      if (prayerPanel) { prayerPanel.classList.add('hidden'); if (slotMachine) slotMachine.classList.remove('hidden'); }
       if (currentIdx >= order.length){
         const anyLeft = order.some(x=> x.spins > 0);
         if (anyLeft) { startTurn(0); return; }
@@ -259,7 +298,30 @@
 
       // build strips and animate
       const force = !!__forceNextJackpot; if (force) __forceNextJackpot = false;
-      const finalSymbols = [];
+      // decide final symbols with potential bias if player has Chance x2
+      let finalSymbols = [];
+      if (force) {
+        finalSymbols = ['🐵','🐵','🐵'];
+      } else if (p.chanceDouble) {
+        // bias: sometimes force a triple, otherwise bias reels to match more often
+        const forceTriple = Math.random() < 0.18; // small chance of guaranteed triple
+        if (forceTriple) {
+          const r = Math.random();
+          let sym;
+          if (r < 0.45) sym = '🐵';
+          else if (r < 0.75) sym = '💩';
+          else { const foods = ['🍔','🍌','🍕','🍩']; sym = foods[Math.floor(Math.random()*foods.length)]; }
+          finalSymbols = [sym, sym, sym];
+        } else {
+          const sym0 = randFromPool();
+          finalSymbols[0] = sym0;
+          finalSymbols[1] = Math.random() < 0.28 ? sym0 : randFromPool();
+          finalSymbols[2] = Math.random() < 0.24 ? finalSymbols[0] : randFromPool();
+        }
+      } else {
+        finalSymbols = [randFromPool(), randFromPool(), randFromPool()];
+      }
+
       const promises = reelEls.map((reel, i) => new Promise((resolve)=>{
         reel.innerHTML = '';
         const strip = document.createElement('div'); strip.className = 'strip';
@@ -267,8 +329,8 @@
         for(let k=0;k<total;k++){ const s = document.createElement('div'); s.className='symbol'; s.textContent = randFromPool(); strip.appendChild(s); }
         // choose a final index near the end
         const finalIndex = 20 + Math.floor(Math.random()*8);
-        // ensure final symbol at that index
-        const finalSym = force ? '🐵' : randFromPool();
+        // ensure final symbol at that index (use precomputed finalSymbols)
+        const finalSym = finalSymbols[i] || randFromPool();
         strip.children[finalIndex].textContent = finalSym;
         finalSymbols[i] = finalSym;
         reel.appendChild(strip);
@@ -325,14 +387,14 @@
           // update HUD + hide pill money for final/after being marked poor
           try{ updateHud(pcur); }catch(e){}
           updatePlayerMoneyInPill(pcur);
-          if (passRequested || pcur.spins <= 0){ passRequested = false; currentIdx++; startTurn(currentIdx); }
+            if (passRequested || pcur.spins <= 0){ passRequested = false; pcur.chanceDouble = false; hideChancePopup(); currentIdx++; startTurn(currentIdx); }
         }, 1250);
         return;
       }
 
       // after short pause, decide whether to advance (wait for spin finished)
       setTimeout(()=>{
-        if (passRequested || pcur.spins <= 0){ passRequested = false; try{ updateHud(pcur); }catch(e){}; updatePlayerMoneyInPill(pcur); currentIdx++; startTurn(currentIdx); }
+        if (passRequested || pcur.spins <= 0){ passRequested = false; try{ updateHud(pcur); }catch(e){}; updatePlayerMoneyInPill(pcur); pcur.chanceDouble = false; hideChancePopup(); currentIdx++; startTurn(currentIdx); }
         // otherwise player may spin again
       }, 800);
     }
@@ -359,6 +421,115 @@
     betMinus.onclick = ()=>{ betIndex = Math.max(0, betIndex-1); updateHud(order[currentIdx]); };
     betPlus.onclick = ()=>{ betIndex = Math.min(BET_OPTIONS.length-1, betIndex+1); updateHud(order[currentIdx]); };
 
+    // Prayer / Prière UI elements
+    const prayerToggle = document.getElementById('prayerToggle');
+    const prayerPanel = document.getElementById('prayer-panel');
+    const prayerWheel = document.getElementById('prayerWheel');
+    const prayerPointer = document.getElementById('prayerPointer');
+    const prayerSpinner = document.getElementById('prayerSpinner');
+    const prayerPing = document.getElementById('prayerPing');
+    const prayerAmount = document.getElementById('prayerAmount');
+    const prayerAmountLabel = document.getElementById('prayerAmountLabel');
+    const prayBtn = document.getElementById('prayBtn');
+    const chancePopupEl = document.getElementById('chancePopup');
+    const slotMachine = document.querySelector('.slot-machine');
+
+    function updatePrayerUI(){
+      const p = order[currentIdx];
+      if (!p) return;
+      const maxAmount = Math.min(75, Math.max(1, p.money));
+      prayerAmount.max = maxAmount;
+      if (Number(prayerAmount.value) > maxAmount) prayerAmount.value = maxAmount;
+      prayerAmountLabel.textContent = `${prayerAmount.value}$`;
+      const pct = Number(prayerAmount.value);
+      // pct is percentage (1$ = 1% ...)
+      prayerWheel.style.background = `conic-gradient(#4caf50 0 ${pct}%, #ff4c4c ${pct}% 100%)`;
+      // reset spinner rotation
+      if (prayerSpinner) prayerSpinner.style.transform = 'rotate(0deg)';
+    }
+
+    prayerAmount.addEventListener('input', ()=> updatePrayerUI());
+
+    function showChancePopup(player){
+      if (!chancePopupEl) return;
+      chancePopupEl.textContent = `Chance x2 — ${player.name}`;
+      chancePopupEl.classList.remove('hidden');
+      // color accent
+      chancePopupEl.style.background = `linear-gradient(90deg, ${player.color} 0%, #ffd54d 100%)`;
+    }
+    function hideChancePopup(){ if (chancePopupEl) chancePopupEl.classList.add('hidden'); }
+
+    prayerToggle.addEventListener('click', ()=>{
+      const p = order[currentIdx];
+      if (!p) { messageEl.textContent = "Aucun joueur actif."; return; }
+      if (prayerPanel.classList.contains('hidden')){
+        // open prayer UI: hide the slot-machine (keeps rules and controls in place)
+        if (slotMachine) slotMachine.classList.add('hidden');
+        prayerPanel.classList.remove('hidden');
+        updatePrayerUI();
+      } else {
+        if (slotMachine) slotMachine.classList.remove('hidden');
+        prayerPanel.classList.add('hidden');
+      }
+    });
+
+    async function runPrayerAnimation(amount){
+      return new Promise((resolve)=>{
+        const fullSpins = 6 + Math.floor(Math.random()*4);
+        const finalAngle = Math.random()*360; // degrees
+        const duration = 2000 + Math.floor(Math.random()*900);
+        const start = performance.now();
+        function easeOut(t){ return 1 - Math.pow(1 - t, 3); }
+        function frame(now){
+          const elapsed = now - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = easeOut(progress);
+          const currentRotation = (fullSpins * 360 + finalAngle) * eased;
+          if (prayerSpinner) prayerSpinner.style.transform = `rotate(${currentRotation}deg)`;
+          if (progress < 1) requestAnimationFrame(frame);
+          else {
+            // show ping briefly
+            prayerPing.classList.add('show');
+            setTimeout(()=> prayerPing.classList.remove('show'), 900);
+            // normalize final angle relative to top (0..360)
+            const landed = finalAngle % 360;
+            // compute wedge degrees (1$ = 1% -> amount% of circle)
+            const wedgeDeg = Number(amount) * 3.6; // amount% of 360
+            const success = landed <= wedgeDeg;
+            resolve(success);
+          }
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+
+    prayBtn.addEventListener('click', async ()=>{
+      const p = order[currentIdx];
+      if (!p) { messageEl.textContent = 'Aucun joueur.'; return; }
+      const amount = Math.max(1, Math.min(Number(prayerAmount.value || 1), Number(prayerAmount.max || 75)));
+      if (amount > p.money){ messageEl.textContent = 'Pas assez d\'argent pour cette prière.'; return; }
+      // deduct prayer cost immediately
+      p.money -= amount;
+      updateHud(p);
+      try{ updatePlayerMoneyInPill(p); }catch(e){}
+      prayBtn.disabled = true;
+      messageEl.textContent = 'Prière en cours...';
+      const ok = await runPrayerAnimation(amount);
+      if (ok){
+        // grant Chance x2 for this player's remaining turn
+        p.chanceDouble = true;
+        showChancePopup(p);
+        messageEl.style.color = '#7af288';
+        messageEl.textContent = `Prière réussie ! Chance x2 actif pour ce tour.`;
+      } else {
+        p.chanceDouble = false;
+        messageEl.style.color = '#ff6b6b';
+        messageEl.textContent = `Prière ratée. -${amount}$`;
+      }
+      // re-enable pray button if player still has money
+      setTimeout(()=>{ prayBtn.disabled = false; updatePrayerUI(); }, 600);
+    });
+
     lever.addEventListener('click', ()=>{ startSpin(); });
     // Arrêter = demander à passer le tour (avance après fin du spin)
     stopBtn.addEventListener('click', ()=>{
@@ -370,7 +541,11 @@
       try{ updatePlayerMoneyInPill(p); }catch(e){}
       passRequested = true;
       // if not spinning, advance immediately
-      if (!spinning){ currentIdx++; startTurn(currentIdx); }
+      if (!spinning){
+        // clear Chance bonus when turn ends
+        p.chanceDouble = false; hideChancePopup();
+        currentIdx++; startTurn(currentIdx);
+      }
     });
 
     // keyboard shortcuts
@@ -380,7 +555,7 @@
         const p = order[currentIdx]; p.spins = 0; stopBtn.disabled = true; messageEl.textContent = 'Pass demandé...';
         try{ updatePlayerMoneyInPill(p); }catch(e){}
         passRequested = true;
-        if (!spinning){ currentIdx++; startTurn(currentIdx); }
+        if (!spinning){ p.chanceDouble = false; hideChancePopup(); currentIdx++; startTurn(currentIdx); }
       }
     });
 
@@ -467,6 +642,7 @@
 
     function endGame(){
       // hide gameplay and order
+      hideChancePopup();
       document.querySelectorAll('main > .game-area, #gameContainer').forEach(el=>{ if (el) el.style.display = 'none'; });
       orderEl.style.display = 'none';
       // hide money labels in player pills for final screen
