@@ -20,8 +20,11 @@ function setMarioPourty(enabled) {
 function loadMarioPourtyToggle() {
   const toggle = document.getElementById('mario-pourty-toggle');
   if (!toggle) return;
-  toggle.checked = getMarioPourty();
+  const applyState = () => { toggle.checked = getMarioPourty(); };
+  applyState();
   toggle.addEventListener('change', () => setMarioPourty(toggle.checked));
+  // ensure state is correct when navigating back/forward (bfcache/pageshow)
+  window.addEventListener('pageshow', () => applyState());
 }
 
 function loadPlayers () {
