@@ -156,7 +156,7 @@ function closeOverlay() {
   if (currentAnimation) cancelAnimationFrame(currentAnimation);
 }
 
-const gameColors = ['#ff5f72','#6a82fb','#48c6ef','#7bffb1','#ffbd55','#e96dff','#ff8c42','#6b6b6b'];
+const gameColors = ['#ff5f72','#6a82fb','#48c6ef','#7bffb1','#ffbd55','#e96dff','#ff8c42','#6b6b6b','#2e1197', '#f8fa6f'];
 
 function showGameListOverlay() {
   mainContainer.classList.add('hidden');
@@ -215,7 +215,7 @@ function drawWheel(angle) {
     ctx.arc(center, center, radius, startA, endA);
     ctx.closePath();
 
-    const fillPalette = ['#ff5f72', '#6a82fb', '#48c6ef', '#7bffb1', '#ffbd55', '#e96dff', 'rgb(255, 106, 163)', 'rgb(255, 155, 116)'];
+    const fillPalette = ['#ff5f72', '#6a82fb', '#48c6ef', '#7bffb1', '#ffbd55', '#e96dff', 'rgb(255, 106, 163)', 'rgb(255, 155, 116)', 'rgb(132, 255, 116)', 'rgb(165, 116, 255)'];
     ctx.fillStyle = fillPalette[index % fillPalette.length];
     ctx.fill();
 
