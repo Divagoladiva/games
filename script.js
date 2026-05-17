@@ -214,7 +214,28 @@ function closeOverlay() {
   if (randomContent) randomContent.style.visibility = 'visible';
 }
 
-const gameColors = ['#ff5f72','#6a82fb','#48c6ef','#7bffb1','#ffbd55','#e96dff','#ff8c42','#6b6b6b','#2e1197', '#f8fa6f', '#fdfdfd'];
+const gameColors = [
+  '#ff5f72',
+  '#6a82fb',
+  '#48c6ef',
+  '#7bffb1',
+  '#ffbd55',
+  '#e96dff',
+  '#ff8fab',
+  '#74c0fc',
+  '#6ee7a8',
+  '#ffd43b',
+  '#b197fc',
+  '#ff8787',
+  '#4dabf7',
+  '#69db7c',
+  '#ffa94d',
+  '#c77dff',
+  '#38d9a9',
+  '#f06595',
+  '#9775fa',
+  '#ffe066'
+];
 
 function showGameListOverlay() {
   mainContainer.classList.add('hidden');
@@ -278,7 +299,28 @@ function drawWheel(angle, gameList = games) {
     ctx.arc(center, center, radius, startA, endA);
     ctx.closePath();
 
-    const fillPalette = ['#ff5f72', '#6a82fb', '#48c6ef', '#7bffb1', '#ffbd55', '#e96dff', 'rgb(255, 106, 163)', 'rgb(255, 155, 116)', 'rgb(132, 255, 116)', 'rgb(165, 116, 255)', 'rgb(234, 236, 119)'];
+  const fillPalette = [
+    '#ff8fab',
+    '#ffb26b',
+    '#ffe66d',
+    '#6ee7a8',
+    '#74c0fc',
+    '#b197fc',
+    '#ff6fae',
+    '#8ce99a',
+    '#4dabf7',
+    '#c77dff',
+    '#ffd43b',
+    '#69db7c',
+    '#ff8787',
+    '#ffa94d',
+    '#ffd93d',
+    '#38d9a9',
+    '#339af0',
+    '#9775fa',
+    '#f06595',
+    '#51cf66'
+  ];
     ctx.fillStyle = fillPalette[index % fillPalette.length];
     ctx.fill();
 
