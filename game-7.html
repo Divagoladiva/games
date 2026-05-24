@@ -470,7 +470,7 @@
         el.style.left = `${x}px`;
         el.style.top = `${y - 20}px`;
         const img = document.createElement('img');
-        img.src = `${itemName}.png`;
+        img.src = `assets/game-7/${itemName}.png`;
         img.alt = itemName;
         el.appendChild(img);
         const itemId = 'it-' + (idCounter++);
@@ -518,7 +518,7 @@
         el.style.left = `${x}px`;
         el.style.top = `${y - 20}px`;
         const img = document.createElement('img');
-        img.src = 'couteau_or.png';
+        img.src = 'assets/game-7/couteau_or.png';
         img.alt = 'couteau_or';
         el.appendChild(img);
         const itemId = 'it-' + (idCounter++);
@@ -704,7 +704,7 @@
       player.hasKnife = true;
       player.knifeType = itemName === 'couteau_or' ? 'gold' : 'normal';
       const img = document.createElement('img');
-      img.src = itemName === 'couteau_or' ? 'couteau_or.png' : 'couteau.png';
+      img.src = itemName === 'couteau_or' ? 'assets/game-7/couteau_or.png' : 'assets/game-7/couteau.png';
       img.className = 'knife-icon';
       img.style.width = `${player.size}px`;
       img.style.height = `${player.size}px`;
@@ -802,7 +802,7 @@
         el.style.left = `${dropX}px`;
         el.style.top = `${dropY - 20}px`;
         const img = document.createElement('img');
-        img.src = 'couteau_or.png';
+        img.src = 'assets/game-7/couteau_or.png';
         img.alt = 'couteau_or';
         el.appendChild(img);
         el.dataset.itemName = 'couteau_or';
