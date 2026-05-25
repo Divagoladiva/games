@@ -10,5 +10,6 @@ const games = [
   { id: 'game-9', title: 'Aboujackpot', description: 'Tourne tourne tourne et gagne des millions!', file: 'game-9.html' },
   { id: 'game-10', title: 'Aboubakar Burger', description: 'Mange un max de burger et évite les ping pongs', file: 'game-10.html' },
   { id: 'game-11', title: 'Mot amed', description: "Trouvez le mot lettre par lettre : gagnez des points, évitez 3 fautes pour ne pas être éliminé.", file: 'game-11.html' },
-  { id: 'game-12', title: 'Aboubowling', description: "Choisis ta boule, ton tir et ta puissance grâce à une machine à sous.", file: 'game-12.html' }
+  { id: 'game-12', title: 'Aboubowling', description: "Choisis ta boule, ton tir et ta puissance grâce à une machine à sous.", file: 'game-12.html' },
+  { id: 'game-13', title: 'Aboubagolf', description: 'Choisis une map de golf et lance la partie (sélection automatique).', file: 'game-13.html' }
 ];
