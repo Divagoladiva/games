@@ -35,6 +35,25 @@
 
     /* Keep the hidden class behavior predictable for this button */
     #reroll-btn.hidden { display: none !important; opacity: 0; pointer-events: none; }
+    /* Map editor button styling (used in Options panel) */
+    .map-editor-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #3ddc84 0%, #00bfa6 100%);
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+    .map-editor-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,0.16); }
+    .map-editor-btn:active { transform: translateY(0); }
   </style>
 </head>
 <body>
@@ -88,6 +107,9 @@
           <input type="checkbox" id="mario-pourty-toggle" />
           <span>Mario Pourty</span>
         </label>
+        <div style="display:flex;justify-content:center;margin-top:12px;">
+          <a href="golf-map-editor.html" class="map-editor-btn" title="Ouvrir l'éditeur de maps">Editeur de maps</a>
+        </div>
       </div>
     </section>
   </div>
