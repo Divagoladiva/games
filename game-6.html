@@ -71,7 +71,10 @@
 
   const apple = { x: null, y: null, r: 22, active: false };
   const appleImage = new Image();
-  appleImage.src = 'pomme.png';
+  let appleImageBroken = false;
+  appleImage.onload = () => { appleImageBroken = false; };
+  appleImage.onerror = () => { appleImageBroken = true; console.warn('⚠️ [GAME] failed to load pomme.png'); clearAppleTimer(); };
+  appleImage.src = 'assets/game-6/pomme.png';
   let appleTimerId = null;
   const appleParticles = [];
 
@@ -149,6 +152,25 @@
       playerTurnEl.textContent = `${player.name} choisis ta bille`;
       playerTurnEl.style.color = player.color || '#fff';
     }
+  }
+
+  function announceOrder() {
+    let step = 0;
+    const preview = setInterval(() => {
+      playerTurnEl.textContent = 'Ordre aléatoire... ' + playersOrder[Math.floor(Math.random() * playersOrder.length)].name;
+      step++;
+      if (step > 18) {
+        clearInterval(preview);
+        // show final order briefly then initialize the choose phase
+        setTimeout(() => {
+          currentPicker = 0;
+          makePlaceholders();
+          updatePlayerTurn();
+          showStatus('Clique sur une des boules grises pour choisir la position.');
+          drawScene();
+        }, 300);
+      }
+    }, 80);
   }
 
   function showStatus(text) {
@@ -240,10 +262,33 @@
       });
     }
 
-    if (apple.active && apple.x != null && apple.y != null && appleImage.complete) {
+    if (apple.active && apple.x != null && apple.y != null) {
       ctx.save();
       ctx.globalAlpha = 0.9;
-      ctx.drawImage(appleImage, apple.x - apple.r, apple.y - apple.r, apple.r * 2.2, apple.r * 2.2);
+      if (!appleImageBroken && appleImage.complete && appleImage.naturalWidth > 0) {
+        try {
+          ctx.drawImage(appleImage, apple.x - apple.r, apple.y - apple.r, apple.r * 2.2, apple.r * 2.2);
+        } catch (e) {
+          // Fallback to simple circle if drawImage fails for any reason
+          ctx.beginPath();
+          ctx.fillStyle = '#ff6b6b';
+          ctx.arc(apple.x, apple.y, apple.r, 0, Math.PI*2);
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+          ctx.stroke();
+          appleImageBroken = true;
+        }
+      } else {
+        // simple fallback representation when image missing or broken
+        ctx.beginPath();
+        ctx.fillStyle = '#ff6b6b';
+        ctx.arc(apple.x, apple.y, apple.r, 0, Math.PI*2);
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.stroke();
+      }
       ctx.globalAlpha = 1;
       ctx.restore();
     }
@@ -568,9 +613,6 @@
   }
 
   function init() {
-    makePlaceholders();
-    updatePlayerTurn();
-
     if (exitButton) {
       const target = exitButton.getAttribute('data-target') || 'index.html';
       exitButton.addEventListener('click', () => {
@@ -578,8 +620,8 @@
       });
     }
 
-    showStatus('Clique sur une des boules grises pour choisir la position.');
-    drawScene();
+    // announce order with brief animation, then show the choosing UI
+    announceOrder();
   }
 
   init();
