@@ -328,7 +328,7 @@
 
     let order = shuffle(players.slice());
     // tickers list and chosen ticker for the current instrument label (3-4 letters)
-    const tickersList = ['TIGR','ABOUB','KFC','NIGG','GUEZZ','DBEL','CS2','PROUT', 'DAX40'];
+    const tickersList = ['TIGR','ABOUB','KFC','NIGG','GUEZZ','DBEL','CS2','PROUT', 'DAX40', 'SMIG', 'MCDO', 'HITL'];
     const chosenTicker = tickersList[Math.floor(Math.random()*tickersList.length)];
     // pick a random hue and derive background + border colors so text stays readable
     const _tickerHue = Math.floor(Math.random()*360);
@@ -742,15 +742,19 @@
     }
 
     // popup generation lists and helper
-    const pseudoBases = ['Divago','Vincent paté','Jacobin','Porto','Donald trump','Joe biden','Elon musk','Michel skibidi','DBEL','Zankirigu','M.Allard','Saucisse'];
-    const popupWraps = ['xX{base}_du_{num}Xx','Abouba-{base}','Quoicou-{base}','{base}_lover','{base} le chad'];
-    const platforms = ['X','Twitter','Youtube','Discord','Instagram','BBC News','QuoicouNews','BoubaNews','SkibidiTV'];
+    const pseudoBases = ['Divago','Vincent paté','Jacobin','Porto','Donald trump','Joe biden','Elon musk','Michel skibidi','DBEL','Zankirigu','M.Allard','Saucisse','Belkayet','Mashallah','Tahmed','Blue yéti','Mamadou','Macwalter','Lipome','Cramptés','Troudpoil'];
+    const popupWraps = ['xX{base}_du_{num}Xx','Abouba-{base}','Quoicou-{base}','{base}_lover','{base} le chad','{base}#{num}', 'Smooth-{base}', 'Giga-{base}', 'Fan de {base}' ];
+    const platforms = ['X','Twitter','Youtube','Discord','Instagram','BBC News','QuoicouNews','BoubaNews','SkibidiTV', 'Parcoursup', 'LinkedIn', 'Reddit', 'Twitch', 'TikTok', 'WhatsApp', 'Snapchat'];
 
     // --- prewritten news message templates ---
     const stagneTemplates = [
       { text: "Ouais j'pense l'{TICKER} il va pas trop bouger la team" },
       { text: "l'{TICKER} il dort ou quoiiii il est fada le type" },
       { text: "100% l'{TICKER} il bouge pas d'un poil..." },
+      { text: "Zzz le {TICKER}..." },
+      { text: "Wesh c'est le confinement ou quoi zebi la teamz (parce que le marché là il est fatiguééé)" },
+      { text: "l'{TICKER} c guez ça pue le nom il pue et il bouge jamais" },
+      { text: "0 Fluctuation aujourd'hui frère..." },
       { text: "{TICKER} il bouge jamais, essayez plutôt l'{OTHER_TICKER}" },
       { text: "Pff... ça se voit que le marché il est fatigué... moi j'dis un petit {PREDICT_SIGNED}%", trueOnly: true },
       { text: "Pff... ça se voit que le marché il est fatigué... moi j'dis un petit {RANDOM_MINUS10_10}%" }
@@ -763,7 +767,12 @@
       { text: "Moi j'pense le {TICKER} va faire {PREDICT_SIGNED}%", trueOnly: true },
       { text: "LES GAAARS, ACHETEZ TOUS DU {TICKER}!§,§§!!" },
       { text: "Guys you should try {TICKER}, trust me" },
-      { text: "VENDEZ VOS {OTHER_TICKER} et ACHETEZ QUE DU {TICKER}!!!!!" }
+      { text: "VENDEZ VOS {OTHER_TICKER} et ACHETEZ QUE DU {TICKER}!!!!!" },
+      { text: "{TICKER} = ARGENT GRATUUUUUUUUUUIT!" },
+      { text: "{TICKER} > ALL" },
+      { text: "Un marabout m'a dit que {TICKER} allait exploser!" },
+      { text: "LE {TICKER} C'EST TROP SOUS-COTÉ LA TEAAAAM" },
+      { text: "franchement {TICKER} c'est cool" },
     ];
 
     const baissierTemplates = [
@@ -774,7 +783,11 @@
       { text: "wesh le {TICKER} ça pue sa mort" },
       { text: "#anti{TICKER}" },
       { text: "En déringolade le {TICKER}..." },
-      { text: "{OTHER_TICKER} il monte bcp plus que le {TICKER} hein..." }
+      { text: "{OTHER_TICKER} il monte bcp plus que le {TICKER} hein..." },
+      { text: "FUCK LE {TICKER}!" },
+      { text: "NON AU {TICKER}!" },
+      { text: "#{OTHER_TICKER}>{TICKER}" },
+      { text: "Franchement c'est surcoté le {TICKER} hein..." },
     ];
 
     function randInt(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
