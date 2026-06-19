@@ -111,7 +111,7 @@
           <button id="btnPass">Passer</button>
           <div class="news-container" style="margin-left:6px;">
             <button id="btnNews">News</button>
-            <div id="newsTooltip" class="news-tooltip">Affiche 3 news, seule 1 est une source sûr</div>
+            <div id="newsTooltip" class="news-tooltip">Affiche 4 news, seule 1 est une source sûr</div>
           </div>
         </div>
         <div id="buySellControls" style="display:flex;gap:12px;align-items:flex-start;">
@@ -169,6 +169,7 @@
     (function(){
       const area = document.createElement('div'); area.className = 'game-popup-area'; area.id = 'gamePopupArea'; document.body.appendChild(area);
     })();
+    
     const timerBar = document.getElementById('timerBar');
     const timerLabel = document.getElementById('timerLabel');
     const btnInvest = document.getElementById('btnInvest');
@@ -387,11 +388,8 @@
         try{
           const player = order[turnIndex]; if (!player) return;
           const p = players.find(x=>x.name===player.name); if (!p) return;
-          const price = computeNewsPrice(players.length);
-          // only one purchase per player per day
+          // only one news per player per day (news are free)
           if (typeof p.lastNewsDay === 'number' && p.lastNewsDay === currentDayIndex){ createPopup('Déjà acheté aujourd\'hui'); return; }
-          if (Math.round(p.wallet) < price){ createPopup('Pas assez d\'argent'); return; }
-          p.wallet = Math.round(p.wallet - price);
           p.lastNewsDay = currentDayIndex;
           updatePlayerBar(); updateBuySellMax();
           // trigger bang behaviour (reused logic)
@@ -409,6 +407,10 @@
     if (buyAmountEl) buyAmountEl.addEventListener('blur', ()=>{ buyAmountEl.value = Math.max(0, Math.round(Number(buyAmountEl.value) || 0)); });
     if (sellAmountEl) sellAmountEl.addEventListener('blur', ()=>{ sellAmountEl.value = Math.max(0, Math.round(Number(sellAmountEl.value) || 0)); });
 
+    // pressing Enter in the amount inputs should confirm the buy/sell (simulate emoji click)
+    if (buyAmountEl) buyAmountEl.addEventListener('keydown', (e)=>{ if (e.key === 'Enter'){ e.preventDefault(); try{ commitBuy(); }catch(err){}; activeAction = null; if (buyControl) buyControl.style.display = 'none'; if (buyAmountEl) buyAmountEl.value = ''; try{ updateBuySellMax(); }catch(e){} } });
+    if (sellAmountEl) sellAmountEl.addEventListener('keydown', (e)=>{ if (e.key === 'Enter'){ e.preventDefault(); try{ commitSell(); }catch(err){}; activeAction = null; if (sellControl) sellControl.style.display = 'none'; if (sellAmountEl) sellAmountEl.value = ''; try{ updateBuySellMax(); }catch(e){} } });
+
     function updateBuySellMax(){
       const player = order[turnIndex];
       if (!player) return;
@@ -421,6 +423,8 @@
       sellAmountEl.max = Math.max(1, Math.floor(Math.round(p.stockValue)));
       // disable sell button if no stock
       if (p.stockValue <= 0) btnSell.disabled = true; else btnSell.disabled = false;
+      // disable buy button when wallet is empty
+      try{ if (btnInvest) btnInvest.disabled = Math.round(p.wallet) <= 0; }catch(e){}
       // update news button state/label
       try{ updateNewsButton(); }catch(e){}
     }
@@ -435,19 +439,21 @@
     function updateNewsButton(){
       try{
         if (!btnNews) return;
-        const price = computeNewsPrice(players.length);
-        btnNews.textContent = `News ${price}$`;
+        // news are free now
+        btnNews.textContent = `News`;
         // disable when current player cannot afford
         const player = order[turnIndex]; if (!player) return;
         const p = players.find(x=>x.name===player.name); if (!p) return;
         // disable when cannot afford, already bought today, or game finished
-        btnNews.disabled = (Math.round(p.wallet) < price) || (typeof p.lastNewsDay === 'number' && p.lastNewsDay === currentDayIndex) || gameFinished;
+        btnNews.disabled = (typeof p.lastNewsDay === 'number' && p.lastNewsDay === currentDayIndex) || gameFinished;
       }catch(e){}
     }
 
     // centralised bang trigger used by key and by News button
     function triggerBang(){
       try{
+        // mark that the current player saw news this turn (used for auto-passing after an invest)
+        try{ const player = order[turnIndex]; if (player){ const p = players.find(x=>x.name===player.name); if (p) p.newsShownThisTurn = currentDayIndex; } }catch(e){}
         if (bangState !== 'idle'){
           try{ bangCreateStaggerTimeouts.forEach(id => clearTimeout(id)); }catch(e){}
           bangCreateStaggerTimeouts = [];
@@ -528,8 +534,8 @@
       p.stockValue = Math.round((p.stockValue + amt));
       updatePlayerBar(); updateSquaresMeta(); drawMarket();
       try{ updateNewsButton(); }catch(e){}
-      // after buy, automatically pass the turn
-      setTimeout(()=> passTurn(), 160);
+      // if player already saw news this turn (via news button or trigger), auto-pass after buy
+      try{ const player = order[turnIndex]; const p = players.find(x=>x.name===player.name); if (p && (p.newsShownThisTurn === currentDayIndex || p.lastNewsDay === currentDayIndex)){ setTimeout(()=> passTurn(), 160); } }catch(e){}
     }
 
     function commitSell(){
@@ -547,8 +553,7 @@
       // if stockValue becomes 0, ensure pct display resets (handled in updatePlayerBar)
       updatePlayerBar(); updateSquaresMeta(); drawMarket();
       try{ updateNewsButton(); }catch(e){}
-      // after sell, automatically pass the turn
-      setTimeout(()=> passTurn(), 160);
+      // do not auto-pass after sell; user must press Pass
     }
 
     // Market simulation state
@@ -562,7 +567,7 @@
     let currentDayIndex = 0; // index into marketData (0..count-1)
     let marketAnimating = false;
     // turn state
-    const TURN_TIME = 15; // seconds
+    const TURN_TIME = 30; // seconds
     let turnIndex = 0; // index in `order` for whose turn it is within the current day
     let turnTimerId = null;
     let turnTimeLeft = TURN_TIME * 1000;
@@ -631,6 +636,7 @@
       highlightOrderChip(player.name);
       highlightPlayerPill(player.name);
       setStatusForPlayer(player);
+      
       // reset timer
       stopTurnTimer();
       turnTimeLeft = TURN_TIME * 1000;
@@ -655,6 +661,7 @@
       gameFinished = true;
       stopTurnTimer();
       statusEl.textContent = 'Le jeu est fini.';
+      
       // disable buttons
       if (btnInvest) btnInvest.disabled = true;
       if (btnSell) btnSell.disabled = true;
@@ -790,6 +797,8 @@
 
     function makeRandomColor(){ const h = Math.floor(Math.random()*360); return `hsl(${h},85%,62%)`; }
 
+    
+
     function createPopup(forcedMessage){
       const area = document.getElementById('gamePopupArea'); if (!area) return null;
       const popup = document.createElement('div'); popup.className = 'game-popup enter';
@@ -809,7 +818,7 @@
       left.appendChild(date);
       const rightTop = document.createElement('div'); rightTop.style.fontSize='0.78rem'; rightTop.style.color='rgba(255,255,255,0.6)'; rightTop.textContent = plat.textContent;
       top.appendChild(left); top.appendChild(rightTop);
-      const pseudo = document.createElement('div'); pseudo.className = 'pseudo'; pseudo.textContent = makeRandomPseudo(); pseudo.style.color = makeRandomColor();
+      const pseudo = document.createElement('div'); pseudo.className = 'pseudo'; pseudo.textContent = makeRandomPseudo(); pseudo.style.color = '#999';
       const message = document.createElement('div'); message.className = 'message';
       try {
         if (typeof forcedMessage === 'string'){
@@ -844,6 +853,8 @@
       popup.appendChild(prof); popup.appendChild(meta);
       // add to area at top so newest appear on top; insert at beginning
       if (area.firstChild) area.insertBefore(popup, area.firstChild); else area.appendChild(popup);
+      // ensure popup displays above the subtle overlay
+      try{ popup.style.zIndex = 9999; }catch(e){}
       // handle for removal and timeout
       const handle = { el: popup, timeoutId: null };
       // mark as persistent immediately for overture so it isn't trimmed during creation
@@ -927,8 +938,8 @@
       const pctRounded = (nextForecast && nextForecast.overture && typeof nextForecast.boostedPctRounded === 'number') ? nextForecast.boostedPctRounded : (nextForecast && typeof nextForecast.pctRounded === 'number' ? nextForecast.pctRounded : null);
       let trueCategory = 'Stagne';
       if (typeof pctRounded === 'number'){
-        if (pctRounded > 10 && pctRounded <= 50) trueCategory = 'Marché haussier';
-        else if (pctRounded >= -50 && pctRounded < -10) trueCategory = 'Marché baissier';
+        if (pctRounded > 10) trueCategory = 'Marché haussier';
+        else if (pctRounded < -10) trueCategory = 'Marché baissier';
         else trueCategory = 'Stagne';
       } else {
         trueCategory = (nextForecast && nextForecast.marketText) ? nextForecast.marketText : 'Stagne';
@@ -957,12 +968,12 @@
         const r_minus = Math.round(randInt(10,50) * mult);
         const r_plus = Math.round(randInt(10,50) * mult);
         return text.replace(/\{TICKER\}/g, chosenTicker)
-                   .replace(/\{OTHER_TICKER\}/g, otherTicker)
-                   .replace(/\{PREDICT_SIGNED\}/g, formatPredictSigned(pct))
-                   .replace(/\{PREDICT_ABS\}/g, formatPredictAbs(pct))
-                   .replace(/\{RANDOM_MINUS10_10\}/g, (r_signed > 0 ? '+' + r_signed : String(r_signed)))
-                   .replace(/\{RANDOM_MINUS10_50\}/g, '-' + Math.abs(r_minus))
-                   .replace(/\{RANDOM_PLUS10_50\}/g, '+' + Math.abs(r_plus));
+             .replace(/\{OTHER_TICKER\}/g, otherTicker)
+             .replace(/\{PREDICT_SIGNED\}/g, formatPredictSigned(pct))
+             .replace(/\{PREDICT_ABS\}/g, formatPredictAbs(pct))
+             .replace(/\{RANDOM_MINUS10_10\}/g, (r_signed > 0 ? '+' + r_signed : String(r_signed)))
+             .replace(/\{RANDOM_MINUS10_50\}/g, '-' + Math.abs(r_minus))
+             .replace(/\{RANDOM_PLUS10_50\}/g, '+' + Math.abs(r_plus));
       }
 
       // weighted pick that disfavors token-containing templates and can exclude "sensitive" ones
@@ -986,15 +997,16 @@
         return weighted[weighted.length-1].t;
       }
 
-      // decide how many true messages (1 or 2), then prepare categories for the 3 slots
+      // decide how many true messages (1..3) for 4 slots, but ensure not to create 2 haussieres + 2 baissieres
       const numTrue = Math.random() < 0.5 ? 2 : 1;
       let cats = [];
-      if (numTrue === 2){
-        const falseCat = randChoice(others);
-        cats = [trueCategory, trueCategory, falseCat];
+      // we will create 4 slots now
+      if (numTrue >= 2){
+        // prefer more true-category messages
+        cats = [trueCategory, trueCategory, trueCategory, randChoice(others)];
       } else {
-        // use both other categories to avoid duplicates
-        cats = [trueCategory, others[0], others[1]];
+        // single true and mix others
+        cats = [trueCategory, others[0], others[1], others[0]];
       }
       cats = shuffle(cats);
 
@@ -1063,7 +1075,12 @@
           if (msgs[i].html === msgs[j].html){ msgs[j].html += ' ·'; }
         }
       }
-
+      // enforce constraint: avoid having exactly 2 haussier and 2 baissier simultaneously
+      const catCounts = msgs.reduce((acc,m)=>{ acc[m.category]=(acc[m.category]||0)+1; return acc; }, {});
+      if ((catCounts['Marché haussier'] === 2) && (catCounts['Marché baissier'] === 2)){
+        // break the tie by turning one of the baissier into Stagne
+        for (let m of msgs){ if (m.category === 'Marché baissier'){ m.category = 'Stagne'; break; } }
+      }
       return shuffle(msgs);
     }
 
@@ -1143,15 +1160,15 @@
         const projected = Math.max(1, prev * (1 + deltaPct / 100));
         const pctRounded = Math.round(deltaPct);
         let marketText = 'Stagne';
-        if (pctRounded > 10 && pctRounded <= 50) marketText = 'Marché haussier';
-        else if (pctRounded >= -50 && pctRounded < -10) marketText = 'Marché baissier';
+        if (pctRounded > 10) marketText = 'Marché haussier';
+        else if (pctRounded < -10) marketText = 'Marché baissier';
         nextForecast = { deltaPct: deltaPct, pctRounded: pctRounded, projected: Math.round(projected), marketText };
         // possibility: schedule the one-time Overture event for next day (1/3 chance)
         try{
           if (!overtureUsed && Math.random() < 0.3333333){
               nextForecast.overture = true;
               nextForecast.overtureMultiplier = 2;
-              nextForecast.overtureText = "Overture des marchés US: Fluctuation x2 aujourd'hui";
+              nextForecast.overtureText = "Overture des marchés: Volatilité x2";
               // mark overture used immediately so no other overture can be scheduled afterwards
               try{ overtureUsed = true; }catch(e){}
               try{
@@ -1187,8 +1204,8 @@
           if (nextForecast && nextForecast.overture && typeof nextForecast.boostedPctRounded === 'number'){
             effPct = nextForecast.boostedPctRounded;
             effProj = nextForecast.boostedProjected;
-            if (effPct > 10 && effPct <= 50) effMarketText = 'Marché haussier';
-            else if (effPct >= -50 && effPct < -10) effMarketText = 'Marché baissier';
+            if (effPct > 10) effMarketText = 'Marché haussier';
+            else if (effPct < -10) effMarketText = 'Marché baissier';
             else effMarketText = 'Stagne';
           }
           console.info('[Prévision] (à venir) ', `${effPct > 0 ? '+' : ''}${effPct}% → $${effProj} — ${effMarketText}`);
@@ -1465,11 +1482,11 @@
           const baseProjected = Math.round(Math.max(1, prev * (1 + basePct/100)));
           const boostedProjected = Math.round(newV);
           let baseMarketText = 'Stagne';
-          if (baseRounded > 10 && baseRounded <= 50) baseMarketText = 'Marché haussier';
-          else if (baseRounded >= -50 && baseRounded < -10) baseMarketText = 'Marché baissier';
+          if (baseRounded > 10) baseMarketText = 'Marché haussier';
+          else if (baseRounded < -10) baseMarketText = 'Marché baissier';
           let boostedMarketText = 'Stagne';
-          if (boostedRounded > 10 && boostedRounded <= 50) boostedMarketText = 'Marché haussier';
-          else if (boostedRounded >= -50 && boostedRounded < -10) boostedMarketText = 'Marché baissier';
+          if (boostedRounded > 10) boostedMarketText = 'Marché haussier';
+          else if (boostedRounded < -10) boostedMarketText = 'Marché baissier';
           console.info(`[Prévision appliquée] base: ${baseRounded > 0 ? '+' : ''}${baseRounded}% → $${baseProjected} — ${baseMarketText}`);
           console.info(`[Prévision appliquée] Overture x${boost}: ${boostedRounded > 0 ? '+' : ''}${boostedRounded}% → $${boostedProjected} — ${boostedMarketText}`);
         } else {
