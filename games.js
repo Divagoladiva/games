@@ -15,4 +15,5 @@ const games = [
   { id: 'game-14', title: 'Aboubacapture', description: 'Choisis ta stratégie et capture le plus de territoires.', file: 'game-14.html' },
   { id: 'game-15', title: 'Aboubatrading', description: "Investis au bon moment et fais un max de flouz.", file: 'game-15.html' },
   { id: 'game-16', title: 'Case Aboubattle', description: 'Obtiens le max de skins rares!', file: 'game-16.html' },
+  { id: 'game-17', title: 'AboubaPizza', description: 'Choisis les bonnes parts et mange un max de pepperoni!', file: 'game-17.html' },
 ];
